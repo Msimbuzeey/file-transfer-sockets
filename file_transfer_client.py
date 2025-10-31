@@ -56,6 +56,7 @@ def unit_placer(quantity, units: tuple = ("B", "KB", "MB")):
         if quantity < factor:
             return f"{quantity:.2f}{unit}"
         quantity /= factor
+    return None
 
 
 if __name__ == '__main__':
