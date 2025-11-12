@@ -1,18 +1,17 @@
-# VERSION 4.8.25
+# VERSION DATE 11.1.25
 
 import socket
 from pathlib import Path
+from constants import *
 
 # SERVER_HOST_IP = "10.124.2.82"
 SERVER_HOST_IP = "localhost"
 
 PORT = 33456
 
-FILE_START_SEND_FLAG = "FSSG"
 FILE_SAVE_PATH = "received/"
 
 FILE_RX_BUFFER_SIZE = 1024
-
 
 def receive_file_loop(client_skt: socket.socket, rx_file_name: str, rx_file_size: int):
     print(f"Receiving File: {rx_file_name}({unit_placer(rx_file_size)})", end="")
@@ -22,7 +21,7 @@ def receive_file_loop(client_skt: socket.socket, rx_file_name: str, rx_file_size
 
     with open(rx_file_path, "wb+") as rx_file:
         rx_data_size = 0
-        # Read file data or download the file in chunks of 1KB(1024bytes)
+        # Read file data/download the file in chunks of 1KB(1024bytes)
         print("...")
         rx_progress = 0
         while True:
@@ -32,19 +31,18 @@ def receive_file_loop(client_skt: socket.socket, rx_file_name: str, rx_file_size
             rx_file.write(frx_data)
 
             # FILE TRANSFER PROGRESS
-            rx_data_size += len(frx_data)
+            rx_data_size += frx_data_size
+
+            if rx_data_size >= rx_file_size:
+                print("File Transfer Complete")
+                break
 
             if rx_file_size != 0:
                 rx_progress = (rx_data_size / rx_file_size) * 100
             print(f"\r{unit_placer(rx_data_size)}/{unit_placer(rx_file_size)} ({rx_progress:.2f}%)", end="")
 
-            if rx_data_size >= rx_file_size:
-                print("File Transfer Complete")
-                break
-    print()
 
-
-def unit_placer(quantity, units: tuple = ("B", "KB", "MB")):
+def unit_placer(quantity, units: tuple = ("B", "KB", "MB", "GB")):
     """
     Scale data_bytes to its proper format
     e.g:
@@ -69,7 +67,8 @@ if __name__ == '__main__':
 
             if rx_data.startswith(FILE_START_SEND_FLAG):
                 file_rx_metadata = rx_data.removeprefix(FILE_START_SEND_FLAG).strip()
-                file_rx_metadata = file_rx_metadata.split("|")
+                file_rx_metadata = file_rx_metadata.split(FILE_METADATA_SEPARATOR)
+
                 rx_f_name, rx_f_size = file_rx_metadata[0], int(file_rx_metadata[1])
 
                 receive_file_loop(client_skt=client, rx_file_name=rx_f_name, rx_file_size=rx_f_size)
